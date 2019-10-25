@@ -64,9 +64,9 @@ class SSD300(nn.Module):
         self.loc = []
         self.conf = []
 
-        for nd, oc in zip(self.num_defaults, self.feature_extractor.out_channels):
-            self.loc.append(nn.Conv2d(oc, nd * 4, kernel_size=3, padding=1))
-            self.conf.append(nn.Conv2d(oc, nd * self.label_num, kernel_size=3, padding=1))
+        for nd, oc in zip(self.num_defaults, self.feature_extractor.out_channels): # feature layers' out_channels
+            self.loc.append(nn.Conv2d(oc, nd * 4, kernel_size=3, padding=1)) # 4: cx, cy, w, h
+            self.conf.append(nn.Conv2d(oc, nd * self.label_num, kernel_size=3, padding=1)) # label_num: number of classes
 
         self.loc = nn.ModuleList(self.loc)
         self.conf = nn.ModuleList(self.conf)
@@ -108,7 +108,7 @@ class SSD300(nn.Module):
     def bbox_view(self, src, loc, conf):
         ret = []
         for s, l, c in zip(src, loc, conf):
-            ret.append((l(s).view(s.size(0), 4, -1), c(s).view(s.size(0), self.label_num, -1)))
+            ret.append((l(s).view(s.size(0), 4, -1), c(s).view(s.size(0), self.label_num, -1))) # ?
 
         locs, confs = list(zip(*ret))
         locs, confs = torch.cat(locs, 2).contiguous(), torch.cat(confs, 2).contiguous()
@@ -117,7 +117,7 @@ class SSD300(nn.Module):
     def forward(self, x):
         x = self.feature_extractor(x)
 
-        detection_feed = [x]
+        detection_feed = [x] # save output of each feature layers
         for l in self.additional_blocks:
             x = l(x)
             detection_feed.append(x)
